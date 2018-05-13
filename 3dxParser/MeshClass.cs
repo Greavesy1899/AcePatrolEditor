@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.IO;
 
 namespace DXMeshParser
@@ -34,8 +30,39 @@ namespace DXMeshParser
         /* FUNCTIONS */
         public void Read(BinaryReader reader)
         {
+            reader.ReadBytes(16);
+
             headerChunk = new HeaderChunk();
             meshInfoChunk = new MeshInfoChunk(reader);
+
+            if (meshInfoChunk.MeshName.Contains(".nif"))
+                return;
+
+            trianglesChunk = new TrianglesChunk(reader, meshInfoChunk.TriangleNum);
+            verticesChunk = new VerticesChunk(reader, meshInfoChunk.VertNum);
+            normalsChunk = new NormalsChunk(reader, meshInfoChunk.VertNum);
+            uvsChunk = new UVsChunk(reader, meshInfoChunk.VertNum);
+        }
+
+        public void WriteToObj(ref List<string> file)
+        {
+            if (meshInfoChunk.MeshName.Contains(".nif"))
+                return;
+
+            verticesChunk.WriteToObj(ref file);
+            file.Add("");
+            uvsChunk.WriteToObj(ref file);
+            file.Add("");
+            normalsChunk.WriteToObj(ref file);
+            file.Add("");
+            file.Add(string.Format("g {0}", meshInfoChunk.MeshName));
+            file.Add("");
+            trianglesChunk.WriteToObj(ref file);
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0}", meshInfoChunk.MeshName);
         }
 
     }

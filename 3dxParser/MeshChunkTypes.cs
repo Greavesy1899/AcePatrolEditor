@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 
 namespace DXMeshParser
 {
@@ -28,6 +29,11 @@ namespace DXMeshParser
             writer.Write(header.ToCharArray());
             writer.Write(version.ToCharArray());
             writer.Write(padding);
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0}, {1}", header, version);
         }
     }
     public class MeshInfoChunk
@@ -67,6 +73,8 @@ namespace DXMeshParser
             meshType = new string(reader.ReadChars(32)).Trim('\0');
             textureName = new string(reader.ReadChars(96)).Trim('\0');
 
+            unkFloats = new float[6];
+
             for (int i = 0; i != 6; i++)
                 unkFloats[i] = reader.ReadSingle();
         }
@@ -83,41 +91,166 @@ namespace DXMeshParser
             foreach (float single in unkFloats)
                 writer.Write(single);
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0}, {1}", meshName, meshType);
+        }
     }
 
     public class TrianglesChunk
     {
-        /* FUNCTIONS */
-        public TrianglesChunk(BinaryReader reader)
-        {
+        /* FIELDS */
+        protected Short3[] triangles;
 
+        /* PROPERTIES */
+        public Short3[] Triangles { get { return triangles; } set { triangles = value; } }
+
+        /* CONSTRUCTORS */
+        public TrianglesChunk(BinaryReader reader, int triangleSize)
+        {
+            triangles = new Short3[triangleSize];
+            Read(reader);
+        }
+
+        /* FUNCTIONS */
+        public void Read(BinaryReader reader)
+        {
+            for (int i = 0; i != triangles.Length; i++)
+            {
+                triangles[i] = new Short3(reader.ReadInt16(), reader.ReadInt16(), reader.ReadInt16());
+            }
+        }
+
+        public void WriteToObj(ref List<string> file)
+        {
+            for (int i = 0; i != triangles.Length; i++)
+            {
+                int num1 = triangles[i].s1 + 1;
+                int num2 = triangles[i].s2 + 1;
+                int num3 = triangles[i].s3 + 1;
+
+                file.Add(string.Format("f {0}/{3}/{6} {1}/{4}/{7} {2}/{5}/{8}", num1, num2, num3, num1, num2, num3, num1, num2, num3));
+            }
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Size: {0}", triangles.Length);
         }
     }
 
     public class VerticesChunk
     {
-        /* FUNCTIONS */
-        public VerticesChunk(BinaryReader reader)
-        {
+        /* FIELDS */
+        protected Float3[] vertices;
 
+        /* PROPERTIES */
+        public Float3[] Vertices { get { return vertices; } set { vertices = value; } }
+
+        /* CONSTRUCTORS */
+        public VerticesChunk(BinaryReader reader, int verticesSize)
+        {
+            vertices = new Float3[verticesSize];
+            Read(reader);
+        }
+
+        /* FUNCTIONS */
+        public void Read(BinaryReader reader)
+        {
+            for (int i = 0; i != vertices.Length; i++)
+            {
+                vertices[i] = new Float3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+            }
+        }
+
+        public void WriteToObj(ref List<string> file)
+        {
+            for (int i = 0; i != vertices.Length; i++)
+            {
+                file.Add(string.Format("v {0} {1} {2}", vertices[i].f1, vertices[i].f2, vertices[i].f3));
+            }
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Size: {0}", vertices.Length);
         }
     }
 
     public class NormalsChunk
     {
-        /* FUNCTIONS */
-        public NormalsChunk(BinaryReader reader)
-        {
+        /* FIELDS */
+        protected Float3[] normals;
 
+        /* PROPERTIES */
+        public Float3[] Normals { get { return normals; } set { normals = value; } }
+
+        /* CONSTRUCTORS */
+        public NormalsChunk(BinaryReader reader, int normalSize)
+        {
+            normals = new Float3[normalSize];
+            Read(reader);
+        }
+
+        /* FUNCTIONS */
+        public void Read(BinaryReader reader)
+        {
+            for (int i = 0; i != normals.Length; i++)
+            {
+                normals[i] = new Float3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+            }
+        }
+
+        public void WriteToObj(ref List<string> file)
+        {
+            for (int i = 0; i != normals.Length; i++)
+            {
+                file.Add(string.Format("vn {0} {1} {2}", normals[i].f1, normals[i].f2, normals[i].f3));
+            }
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Size: {0}", normals.Length);
         }
     }
 
     public class UVsChunk
     {
-        /* FUNCTIONS */
-        public UVsChunk(BinaryReader reader)
-        {
+        /* FIELDS */
+        protected Float2[] uvsCoords;
 
+        /* PROPERTIES */
+        public Float2[] UVsCoords { get { return uvsCoords; } set { uvsCoords = value; } }
+
+        /* CONSTRUCTORS */
+        public UVsChunk(BinaryReader reader, int uvsSize)
+        {
+            uvsCoords = new Float2[uvsSize];
+            Read(reader);
+        }
+
+        /* FUNCTIONS */
+        public void Read(BinaryReader reader)
+        {
+            for (int i = 0; i != uvsCoords.Length; i++)
+            {
+                uvsCoords[i] = new Float2(reader.ReadSingle(), reader.ReadSingle());
+            }
+        }
+
+        public void WriteToObj(ref List<string> file)
+        {
+            for (int i = 0; i != uvsCoords.Length; i++)
+            {
+                file.Add(string.Format("vt {0} {1}", uvsCoords[i].f1, uvsCoords[i].f2));
+            }
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Size: {0}", uvsCoords.Length);
         }
     }
 }
